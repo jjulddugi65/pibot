@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PiBot Final Project</title>
+    <script src="https://sdk.minepi.com/pi-sdk-client.js"></script>
+    <script>
+        // Pi SDK가 로드되면 실행
+        window.onload = function() {
+            // SDK 초기화
+            Pi.init({ version: "2.0", sandbox: true });
 
+            // 1. 사용자 인증 (로그인) 요청
+            Pi.authenticate(['username', 'payments'], onAuth);
+        }
+
+        // 인증 콜백 함수
+        function onAuth(user) {
+            document.getElementById("status").innerText = "✅ 1. 사용자 인증 성공: " + user.username;
+            
+            // 2. 트랜잭션 처리 요청 (5/10 통과를 위한 핵심)
+            requestPayment(); 
+        }
+
+        // 테스트 결제 요청 함수
+        function requestPayment() {
+            const paymentData = {
+                amount: 0.0001, 
+                memo: "Pi Hackathon 5/10 Test", 
+                metadata: {
+                    appName: "FOR PI MAXIMUM TRANSACTION"
+                }
+            };
+
+            Pi.requestPayment(paymentData, 
+                function(payment) {
+                    document.getElementById("transaction-status").innerText = "✅ 2. 트랜잭션 성공! (Payment ID: " + payment.identifier + ")";
+                },
+                function(error) {
+                    document.getElementById("transaction-status").innerText = "❌ 2. 트랜잭션 실패 (실패는 정상, 트랜잭션 요청 자체를 봐야함)";
+                    console.error(error);
+                }
+            );
+        }
+    </script>
+</head>
+<body>
+    <h1>PiBot Final Project</h1>
+    <h2>해커톤 5/10 단계 자동 통과를 위한 테스트 코드</h2>
+    <p id="status">⏳ 1. 사용자 인증 대기 중...</p>
+    <p id="transaction-status">⏳ 2. 트랜잭션 요청 대기 중...</p>
+</body>
+</html>
