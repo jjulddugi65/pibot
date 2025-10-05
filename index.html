@@ -1,55 +1,10 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiBot Authentication Success Proof</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: sans-serif;
-            text-align: center;
-        }
-        h1 { color: #007bff; }
-    </style>
-    
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    
-    <script>
-        // 2. Pi SDK 초기화 (Sandobox 모드로 설정)
-        Pi.init({ version: "2.0", sandbox: true });
-
-        // 불완전 결제 처리 콜백 (인증 성공에 필요)
-        function onIncompletePaymentFound(payment) {
-            console.log("불완전 결제 발견:", payment.identifier);
-        };
-
-        // 3. 인증 요청 (가장 중요한 부분: 이 함수가 인증 팝업을 띄웁니다)
-        const scopes = ['username', 'payments']; // 최소 권한 요청
-        
-        Pi.authenticate(scopes, onIncompletePaymentFound)
-            .then(function(auth) {
-                // 인증 성공 시 콘솔에 로그가 남고, 화면이 업데이트됩니다.
-                console.log("✅ Pi 인증 성공. 사용자: " + auth.user.username);
-                document.getElementById('status').textContent = "✅ Pi 인증 성공! 사용자 " + auth.user.username + " 님 환영합니다. (제출 증거 확보 완료)";
-            })
-            .catch(function(error) {
-                // 오류 처리 (404 오류 해결 후에도 실패하면 이 로그가 뜹니다.)
-                document.getElementById('status').textContent = "❌ 인증 오류 발생. 콘솔 확인.";
-                console.error("Pi 인증 오류:", error);
-            });
-    </script>
-</head>
-<body>
-    <h1>PiBot 최종 제출 증거 확보</h1>
-    <p>이 페이지는 **Pi SDK 연동 성공**을 증명합니다.</p>
-    <div id="status" style="font-size: 1.2rem; font-weight: bold; color: #dc3545;">
-        Pi 인증 요청 중... 잠시 기다려주세요.
-    </div>
-</body>
-</html>
+<script>
+  Pi.init({ version: "2.0", sandbox: false }); // ← 샌드박스 모드 제거
+  Pi.authenticate(['username', 'payments'])
+   .then(auth => {
+      document.getElementById('status').textContent = "✅ Pi 인증 성공!";
+    })
+   .catch(error => {
+      document.getElementById('status').textContent = `❌ 오류 발생: ${error}`;
+    });
+</script>
