@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PiBot Authentication Success Proof</title>
+    <title>PiBot 최종 제출 증거 (인증 성공)</title>
     <style>
         body {
             display: flex;
@@ -12,55 +12,72 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            background: #f0f0f0;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
+      .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        #status {
-            font-size: 1.2rem;
-            max-width: 400px;
-            color: #007bff;
-            text-align: center;
+      .spinner {
+            animation: spin 1s linear infinite;
+            width: 40px;
+            height: 40px;
         }
-       .error {
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+      .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+      .error {
             color: #dc3545;
         }
     </style>
 </head>
 <body>
-    <h1>PiBot 최종 제출 증거</h1>
-    <div id="status">Pi 인증 요청 중... 잠시 기다려주세요.</div>
+    <div class="container">
+        <h1>PiBot 최종 제출 증거</h1>
+        <div class="spinner"></div>
+        <div id="result" class="result"></div>
+    </div>
 
+    <!-- Pi SDK Initialization -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        // 1. Pi SDK 초기화 (샌드박스 모드 해제)
+        // 1. Pi SDK 초기화 (반드시 app_id 추가)
         Pi.init({ 
             version: "2.0", 
-            sandbox: false // ← 실제 네트워크 사용
+            sandbox: false, 
+            app_id: "mbidmc4mrfwbm59zgz4xkhd0duaiespjbhxyc6aorfdhvznhogxduyw2ijggaqs4" // 사용자님의 앱 ID
         });
 
-        // 2. 인증 요청 (팝업 띄우기)
-        const scopes = ['username', 'payments']; // 필수 권한 요청
-        Pi.authenticate(scopes)
-           .then((auth) => {
-                // 3. 인증 성공 시
-                document.getElementById('status').className = "success";
-                document.getElementById('status').textContent = `
-                    ✅ Pi 인증 성공!
-                    - 사용자명: ${auth.user.username}
-                    - 인증 토큰: ${auth.token.slice(0, 20)}...
+        // 2. 인증 요청
+        Pi.authenticate(['username', 'payments'])
+          .then((auth) => {
+                const resultElement = document.getElementById('result');
+                resultElement.innerHTML = `
+                    <div class="success">
+                        ✅ Pi 인증 성공!
+                        <p>- 사용자명: ${auth.user.username}</p>
+                        <p>- 인증 토큰: ${auth.token.slice(0, 20)}...</p>
+                        <button onclick="location.reload()">재시도</button>
+                    </div>
                 `;
             })
-           .catch((error) => {
-                // 4. 오류 발생 시
-                document.getElementById('status').className = "error";
-                document.getElementById('status').textContent = `
-                    ❌ 인증 실패: ${error.name}
-                    - 메시지: ${error.message}
-                    - 코드: ${error.code}
+          .catch((error) => {
+                const resultElement = document.getElementById('result');
+                resultElement.innerHTML = `
+                    <div class="error">
+                        ❌ 인증 실패: ${error.name} (${error.code})
+                        <p>- 메시지: ${error.message}</p>
+                        <button onclick="location.reload()">재시도</button>
+                    </div>
                 `;
             });
     </script>
