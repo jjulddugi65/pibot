@@ -1,10 +1,68 @@
-<script>
-  Pi.init({ version: "2.0", sandbox: false }); // ← 샌드박스 모드 제거
-  Pi.authenticate(['username', 'payments'])
-   .then(auth => {
-      document.getElementById('status').textContent = "✅ Pi 인증 성공!";
-    })
-   .catch(error => {
-      document.getElementById('status').textContent = `❌ 오류 발생: ${error}`;
-    });
-</script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiBot Authentication Success Proof</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        #status {
+            font-size: 1.2rem;
+            max-width: 400px;
+            color: #007bff;
+            text-align: center;
+        }
+       .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>PiBot 최종 제출 증거</h1>
+    <div id="status">Pi 인증 요청 중... 잠시 기다려주세요.</div>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+        // 1. Pi SDK 초기화 (샌드박스 모드 해제)
+        Pi.init({ 
+            version: "2.0", 
+            sandbox: false // ← 실제 네트워크 사용
+        });
+
+        // 2. 인증 요청 (팝업 띄우기)
+        const scopes = ['username', 'payments']; // 필수 권한 요청
+        Pi.authenticate(scopes)
+           .then((auth) => {
+                // 3. 인증 성공 시
+                document.getElementById('status').className = "success";
+                document.getElementById('status').textContent = `
+                    ✅ Pi 인증 성공!
+                    - 사용자명: ${auth.user.username}
+                    - 인증 토큰: ${auth.token.slice(0, 20)}...
+                `;
+            })
+           .catch((error) => {
+                // 4. 오류 발생 시
+                document.getElementById('status').className = "error";
+                document.getElementById('status').textContent = `
+                    ❌ 인증 실패: ${error.name}
+                    - 메시지: ${error.message}
+                    - 코드: ${error.code}
+                `;
+            });
+    </script>
+</body>
+</html>
