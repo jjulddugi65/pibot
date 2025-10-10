@@ -169,7 +169,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label htmlFor="piAmount">Pi Amount (for SC Selection):</label>
-                    <input type="number" id="piAmount" step="0.0001" value="0.0101" placeholder="e.g. 2.5">
+                    <input type="number" id="piAmount" step="0.0001" value="2.5000" placeholder="e.g. 2.5">
                 </div>
                 <div>
                     <label htmlFor="taskType">Task Type:</label>
@@ -227,7 +227,7 @@
         const maxNodes = 10001;
         let authenticatedUser = null;                   
         const MOCK_PUBLIC_KEY_SHORT = 'GATMBR...Q06';           
-        const KYC_ID = '10821';             
+        const KYC_ID = '10821'; // <-- '1' for Human (Taxed) | Change this to '20821' to simulate Machine (Exempt)            
         const mockUsername = KYC_ID + '_' + MOCK_PUBLIC_KEY_SHORT; 
 
         // --- Public Tax & Economy Variables ---
@@ -285,7 +285,7 @@
         // --- MOCKED Pi SDK Functions ---                
         window.piAuthenticate = function() {
             authenticatedUser = mockUsername;
-            showMessage(`Pi ID: ${authenticatedUser} authenticated successfully (MOCKED).`, true);
+            showMessage(`Pi ID: ${authenticatedUser} authenticated successfully (MOCKED). ID Prefix: ${authenticatedUser.charAt(0)}`, true);
             document.getElementById('login_button').disabled = true;
             document.getElementById('payment_button').disabled = false;
         }
@@ -314,16 +314,43 @@
             runSimulation(taskType);              
         }        
 
-        // --- Simulation & Core Logic ---             
+        // --- Simulation & Core Logic (1st SC AI Logic) ---             
         function runSimulation(taskType) {
             const piAmountInput = document.getElementById('piAmount').value;
             const amount = parseFloat(piAmountInput);                                           
-            // 1. Economic Logic: Reverse calculation of Work Cost (W), Public Tax (P), Fixed Fee (F)
-            const workCost = (amount - FIXED_FEE) / (1 + PUBLIC_TAX_RATE);                               
-            const publicTax = workCost * PUBLIC_TAX_RATE;                               
+            
+            // ======================== NEW LOGIC START: ID Check and T3 Conditional Calculation ========================
+            const senderName = authenticatedUser ? authenticatedUser : KYC_ID + '_...QO6';
+            const senderIDPrefix = parseInt(senderName.charAt(0)); // ID의 첫 번째 자릿수 확인 (1=인간, 2=기계/IoT 등)
+            
+            let workCost = 0;
+            let publicTax = 0;
+            let scDisplay = '';
+
+            if (senderIDPrefix === 1) {
+                // ID starts with '1' (Human): Public Tax (T3) is charged.
+                // WorkCost = (Amount - FIXED_FEE) / (1 + T3_RATE)
+                workCost = (amount - FIXED_FEE) / (1 + PUBLIC_TAX_RATE);
+                publicTax = workCost * PUBLIC_TAX_RATE;
+                scDisplay = '1st SC (Human - T3 Charged)';
+                
+                // --- MOCK: T3 Fund Transfer and 30-Second Veto Logic ---
+                showMessage(`T3 Fund Transfer ($${publicTax.toFixed(4)}): Core Team 30s Veto Logic Initiated (MOCKED)`, true);
+
+            } else {
+                // ID starts with '2' or higher (Machine/IoT/Future Entity): T3 is NOT charged.
+                // WorkCost = Amount - FIXED_FEE
+                workCost = amount - FIXED_FEE;
+                publicTax = 0; // Explicit T3 Exemption
+                scDisplay = '1st SC (Machine - T3 Exempt)';
+
+                // --- MOCK: T3 Exemption Confirmation ---
+                showMessage(`T3 Exempt: Machine order detected. No T3 veto check needed.`, true);
+            }
+
             publicTaxPool += publicTax;
             updatePublicTaxDisplay(); 
-            
+            // ======================== NEW LOGIC END ========================
 
             // 2. Smart Contract Selection (Based on Work Cost)                    
             let scType = workCost >= 2.0 ? '2nd SC (Market)' : '1st SC (Survival)';
@@ -334,7 +361,7 @@
             transactionID++;
             const mainID = transactionID;                                           
             const subAmountNet = (workCost / 2.0).toFixed(5);
-            const senderName = authenticatedUser ? authenticatedUser : KYC_ID + '_...QO6';
+            
             const currentTime = new Date().toLocaleTimeString();                    
 
             // AI Simulation: 20% Failure Rate
@@ -344,9 +371,10 @@
                        
 
             // 3. Main Transaction (User calling the SC)
-            let scDisplay = scType;
+            
             if (scType.includes('1st SC')) {
-                scDisplay = '1st SC (0.0101/n)';
+                // Use the SC name that reflects the T3 policy
+                scDisplay = scDisplay.replace('1st SC', scType); 
             }                                            
             let newRowMain = ledger.insertRow();
             newRowMain.innerHTML = `
@@ -372,15 +400,19 @@
                 <td class="px-2 py-2 text-xs">COLLECTED</td>
             `;                    
 
-            // 5. Ledger Entry: Public Tax
+            // 5. Ledger Entry: Public Tax (Update the description based on the calculated tax)
             transactionID++; 
             let newRowTax = ledger.insertRow();
+            // 공공세가 0보다 크면 '징수', 아니면 '면제'로 표시
+            const taxDescription = publicTax > 0 ? `PUBLIC TAX (${(PUBLIC_TAX_RATE * 100).toFixed(0)}%)` : 'PUBLIC TAX (0% - MACHINE EXEMPT)';
+            const taxColor = publicTax > 0 ? 'text-red-600' : 'text-green-600'; // 초록색은 면제(0)
+
             newRowTax.innerHTML = `
                 <td class="px-2 py-2 text-xs">${transactionID}</td>
                 <td class="px-2 py-2 text-xs">${currentTime}</td>
                 <td class="px-2 py-2 text-xs">SYSTEM (Tax T3)</td>
-                <td class="px-2 py-2 text-xs font-bold text-red-600">PUBLIC TAX (${(PUBLIC_TAX_RATE * 100).toFixed(0)}%)</td>
-                <td class="px-2 py-2 text-xs font-bold text-red-600">-${publicTax.toFixed(4)}</td>
+                <td class="px-2 py-2 text-xs font-bold ${taxColor}">${taxDescription}</td>
+                <td class="px-2 py-2 text-xs font-bold ${taxColor}">-${publicTax.toFixed(4)}</td>
                 <td class="px-2 py-2 text-xs">Public Fund</td>
                 <td class="px-2 py-2 text-xs">COLLECTED</td>
             `;                    
@@ -503,12 +535,6 @@
                 .attr('height', height + margin.top + margin.bottom);                    
             
             const x = d3.scaleBand().range([0, width]).padding(0.3);
-            const y = d3.scaleLinear().range([height, 0]);
-
-            const g = svg.append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-            x.domain(data.map((d, i) => 'Q' + (i + 1))); 
             y.domain([0, d3.max(data, d => d) + 0.5]);
 
             // Y-axis generation
